@@ -56,39 +56,37 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        // Only capture hardware scanner input when on the hardware scanner screen
-        if (currentScreen == Screen.HARDWARE_SCANNER && event.action == KeyEvent.ACTION_DOWN) {
-            when (event.keyCode) {
-                KeyEvent.KEYCODE_ENTER -> {
-                    // Scanner finished - commit the buffer
-                    val scanned = hardwareScanBuffer.toString().trim()
-                    if (scanned.isNotEmpty()) {
-                        hardwareScanResult = scanned
-                        hardwareScanHistory.add(0, scanned)
-                    }
-                    hardwareScanBuffer.clear()
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (currentScreen != Screen.HARDWARE_SCANNER || event == null) {
+            return super.onKeyDown(keyCode, event)
+        }
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_ENTER -> {
+                // Scanner finished - commit the buffer
+                val scanned = hardwareScanBuffer.toString().trim()
+                if (scanned.isNotEmpty()) {
+                    hardwareScanResult = scanned
+                    hardwareScanHistory.add(0, scanned)
+                }
+                hardwareScanBuffer.clear()
+                return true
+            }
+            // Let special keys pass through normally
+            KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                return super.onKeyDown(keyCode, event)
+            }
+            else -> {
+                // Append the character to the buffer
+                val char = event.unicodeChar.toChar()
+                if (char.code != 0) {
+                    hardwareScanBuffer.append(char)
                     return true
-                }
-                // Ignore modifier keys and special keys
-                KeyEvent.KEYCODE_SHIFT_LEFT, KeyEvent.KEYCODE_SHIFT_RIGHT,
-                KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.KEYCODE_CTRL_RIGHT,
-                KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.KEYCODE_ALT_RIGHT,
-                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN,
-                KeyEvent.KEYCODE_BACK -> {
-                    return super.dispatchKeyEvent(event)
-                }
-                else -> {
-                    // Append the character to the buffer
-                    val char = event.unicodeChar.toChar()
-                    if (char.code != 0) {
-                        hardwareScanBuffer.append(char)
-                        return true
-                    }
                 }
             }
         }
-        return super.dispatchKeyEvent(event)
+        return super.onKeyDown(keyCode, event)
     }
 
     @Composable
